@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWalletNFTs } from "@/src/lib/api/opensea";
+import { unifiedNFTService } from "@/src/lib/api/unified-nft-service";
 import { analyzeCulturalSignificance } from "@/src/lib/api/caesar";
 import { transformToMystical } from "@/src/lib/api/claude";
 
@@ -14,17 +14,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Fetch NFT data from OpenSea
-    console.log("Fetching NFTs from OpenSea for:", walletAddress);
-    const nftData = await fetchWalletNFTs(walletAddress);
+    // Step 1: Fetch NFT data using unified service (OpenSea + Alchemy + CoinGecko)
+    console.log("Performing unified NFT analysis for:", walletAddress);
+    const walletAnalysis = await unifiedNFTService.analyzeWallet(walletAddress);
     
-    if (!nftData.nfts || nftData.nfts.length === 0) {
+    if (!walletAnalysis.nfts || walletAnalysis.nfts.length === 0) {
       return NextResponse.json({
         success: true,
         nftData: {
           totalCount: 0,
           nfts: [],
           topCollections: [],
+          portfolioValue: 0,
+          portfolioValueUSD: 0,
         },
         insights: [{
           type: "major",
@@ -33,8 +35,36 @@ export async function POST(request: NextRequest) {
           confidence: 1.0,
           cosmicAlignment: "New moon in the digital realm"
         }],
+        marketContext: {
+          ethPrice: walletAnalysis.ethPrice,
+          globalMarketCap: walletAnalysis.globalMarketCap,
+          globalVolume24h: walletAnalysis.globalVolume24h,
+        }
       });
     }
+    
+    // Transform unified data to legacy format for compatibility
+    const nftData = {
+      totalCount: walletAnalysis.totalNFTs,
+      nfts: walletAnalysis.nfts.map(nft => ({
+        name: nft.name,
+        description: nft.description,
+        imageUrl: nft.imageUrl,
+        collection: nft.collectionName,
+        traits: nft.traits,
+        rarityScore: nft.rarityScore,
+        lastSalePrice: nft.lastSalePriceUSD,
+      })),
+      topCollections: walletAnalysis.topCollectionsByValue.map(c => c.name),
+      collections: Array.from(walletAnalysis.collections.values()).map(h => ({
+        name: h.collection.name,
+        floorPrice: h.collection.floorPriceUSD,
+        holdings: h.holdings,
+        value: h.valueUSD,
+        oneDayChange: h.collection.oneDayChange,
+        sevenDayChange: h.collection.sevenDayChange,
+      })),
+    };
 
     // Step 2: Analyze with Caesar LLM
     console.log(`Analyzing cultural significance with Caesar (${analysisDepth} depth)`);
@@ -55,9 +85,24 @@ export async function POST(request: NextRequest) {
         totalCount: nftData.totalCount,
         topCollections: nftData.topCollections,
         collections: nftData.collections,
+        portfolioValue: walletAnalysis.portfolioValue,
+        portfolioValueUSD: walletAnalysis.portfolioValueUSD,
       },
       caesarAnalysis,
       insights: mysticalInsights,
+      analytics: {
+        diversificationScore: walletAnalysis.diversificationScore,
+        volatilityScore: walletAnalysis.volatilityScore,
+        liquidityScore: walletAnalysis.liquidityScore,
+        topCollectionsByValue: walletAnalysis.topCollectionsByValue,
+        topCollectionsByCount: walletAnalysis.topCollectionsByCount,
+      },
+      marketContext: {
+        ethPrice: walletAnalysis.ethPrice,
+        gasPrice: walletAnalysis.gasPrice,
+        globalMarketCap: walletAnalysis.globalMarketCap,
+        globalVolume24h: walletAnalysis.globalVolume24h,
+      },
     });
   } catch (error) {
     console.error("Oracle analysis error:", error);
