@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  /* Hans Oracle Dark Theme - Default and Only Theme */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --mystical-purple: #8b5cf6;
+  --mystical-gold: #f59e0b;
+  --card-background: #1f1f1f;
+  --border: #333;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-mystical-purple: var(--mystical-purple);
+  --color-mystical-gold: var(--mystical-gold);
+  --color-card: var(--card-background);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Oracle-specific mystical styling */
+.mystical-glow {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.floating-card {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
