@@ -70,13 +70,19 @@ class CoinGeckoAPIClient {
 
   constructor() {
     this.apiKey = process.env.COINGECKO_API_KEY || '';
-    this.baseUrl = this.apiKey 
-      ? 'https://pro-api.coingecko.com/api/v3'
-      : 'https://api.coingecko.com/api/v3';
+    
+    // Check if it's a demo key (starts with CG-) or pro key
+    const isDemoKey = this.apiKey.startsWith('CG-');
+    this.baseUrl = isDemoKey || !this.apiKey
+      ? 'https://api.coingecko.com/api/v3'
+      : 'https://pro-api.coingecko.com/api/v3';
     
     if (!this.apiKey) {
       console.warn('⚠️ CoinGecko API key not configured - using free tier with rate limits');
       this.rateLimitDelay = 6000; // 10 requests per minute for free tier
+    } else if (isDemoKey) {
+      console.log('🔑 Using CoinGecko Demo API key');
+      this.rateLimitDelay = 1000; // Demo keys have better rate limits than free
     }
   }
 
@@ -92,7 +98,8 @@ class CoinGeckoAPIClient {
     };
 
     if (this.apiKey) {
-      headers['x-cg-pro-api-key'] = this.apiKey;
+      const isDemoKey = this.apiKey.startsWith('CG-');
+      headers[isDemoKey ? 'x-cg-demo-api-key' : 'x-cg-pro-api-key'] = this.apiKey;
     }
 
     for (let i = 0; i < retries; i++) {
