@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unifiedNFTService } from "@/src/lib/api/unified-nft-service";
 import { analyzeCulturalSignificance } from "@/src/lib/api/caesar";
-import { transformToMystical } from "@/src/lib/api/claude";
+import { generateEnhancedAnalysis } from "@/src/lib/ai/enhanced-claude-prompts";
 
 export async function POST(request: NextRequest) {
   try {
-    const { walletAddress, sessionId, analysisDepth = "standard" } = await request.json();
+    const { walletAddress, analysisDepth = "standard" } = await request.json();
 
     if (!walletAddress) {
       return NextResponse.json(
@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
         },
         insights: [{
           type: "major",
-          title: "The Empty Vessel",
-          mysticalInsight: "Your wallet stands as an empty vessel, awaiting the digital artifacts that will define your journey through the blockchain cosmos. The void itself speaks of infinite potential...",
+          title: "Portfolio Analysis - No Assets Detected",
+          mysticalInsight: "No digital assets detected in this wallet address. This represents a clean slate for strategic portfolio construction, with unlimited potential for sophisticated curation across various NFT market segments and cultural movements.",
           confidence: 1.0,
-          cosmicAlignment: "New moon in the digital realm"
+          cosmicAlignment: "Ready for strategic asset allocation and cultural positioning"
         }],
         marketContext: {
           ethPrice: walletAnalysis.ethPrice,
@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
       traits: [], // Would extract from metadata
     }, analysisDepth as "quick" | "standard" | "deep");
 
-    // Step 3: Transform with Claude for mystical insights
-    console.log(`Transforming to mystical insights with Claude (${analysisDepth} depth)`);
-    const mysticalInsights = await transformToMystical(caesarAnalysis, nftData, analysisDepth as "quick" | "standard" | "deep");
+    // Step 3: Generate enhanced analysis with sophisticated prompts
+    console.log(`Generating enhanced analysis with sophisticated Claude prompts (${analysisDepth} depth)`);
+    const mysticalInsights = await generateEnhancedAnalysis(caesarAnalysis, nftData, analysisDepth as "quick" | "standard" | "deep");
 
     return NextResponse.json({
       success: true,

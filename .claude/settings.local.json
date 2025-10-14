@@ -19,7 +19,9 @@
       "Bash(node:*)",
       "Bash(for i in {1..12})",
       "Bash(do)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(/bashes)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

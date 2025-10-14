@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-interface MysticalLoaderProps {
+interface AnalysisLoaderProps {
   message?: string;
   size?: "small" | "medium" | "large";
 }
@@ -13,10 +13,10 @@ const sizeConfig = {
   large: { container: "w-48 h-48", orb: "w-6 h-6", text: "text-base" },
 };
 
-export default function MysticalLoader({ 
-  message = "Channeling cosmic energies...", 
+export default function AnalysisLoader({ 
+  message = "Processing analytical data...", 
   size = "medium" 
-}: MysticalLoaderProps) {
+}: AnalysisLoaderProps) {
   const config = sizeConfig[size];
 
   return (
@@ -48,7 +48,7 @@ export default function MysticalLoader({
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-mystical-purple rounded-full" />
         </motion.div>
 
-        {/* Central mystical symbol */}
+        {/* Central analysis symbol */}
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
             className="relative"
@@ -111,7 +111,7 @@ export default function MysticalLoader({
           </motion.div>
         </div>
 
-        {/* Orbiting mystical orbs */}
+        {/* Orbiting analysis indicators */}
         {[0, 120, 240].map((rotation, index) => (
           <motion.div
             key={index}
@@ -188,14 +188,14 @@ export default function MysticalLoader({
         {message}
       </motion.p>
 
-      {/* Mystical loading phases */}
+      {/* Analysis loading phases */}
       <motion.div
         className="flex gap-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        {["Connecting", "Divining", "Revealing"].map((phase, index) => (
+        {["Connecting", "Processing", "Analyzing"].map((phase, index) => (
           <motion.span
             key={phase}
             className="text-xs text-foreground/40"

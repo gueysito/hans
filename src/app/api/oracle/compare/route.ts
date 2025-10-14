@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWalletNFTs } from "@/src/lib/api/opensea";
+import { unifiedNFTService } from "@/src/lib/api/unified-nft-service";
 import { analyzeCulturalSignificance } from "@/src/lib/api/caesar";
-import { transformToMystical } from "@/src/lib/api/claude";
+import { generateEnhancedAnalysis } from "@/src/lib/ai/enhanced-claude-prompts";
 
 interface WalletAnalysisResult {
   address: string;
-  nftData: any;
+  analysis: any;
   caesarAnalysis: any;
   mysticalInsights: any[];
 }
@@ -37,13 +37,13 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`Analyzing wallet: ${address}`);
         
-        // Fetch NFT data
-        const nftData = await fetchWalletNFTs(address);
+        // Fetch unified analysis
+        const analysis = await unifiedNFTService.analyzeWallet(address);
         
-        if (nftData.totalCount === 0) {
+        if (analysis.totalNFTs === 0) {
           walletAnalyses.push({
             address,
-            nftData: { totalCount: 0, nfts: [], topCollections: [] },
+            analysis: { totalNFTs: 0, nfts: [], collections: new Map() },
             caesarAnalysis: { 
               culturalSignificance: "An empty vessel awaiting digital artifacts",
               confidence: 1.0
@@ -59,28 +59,33 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Cultural analysis
+        // Convert unified data to format expected by Caesar
+        const topCollections = Array.from(analysis.collections.keys()).slice(0, 10);
         const caesarAnalysis = await analyzeCulturalSignificance({
-          collections: nftData.topCollections,
-          nftCount: nftData.totalCount,
-          descriptions: nftData.nfts.map((n: any) => n.description).filter(Boolean),
+          collections: topCollections,
+          nftCount: analysis.totalNFTs,
+          descriptions: analysis.nfts.map((n) => n.description).filter(Boolean),
           traits: [],
         }, analysisDepth as "quick" | "standard" | "deep");
 
-        // Mystical transformation
-        const mysticalInsights = await transformToMystical(
+        // Convert to format expected by enhanced analysis
+        const nftDataFormat = {
+          totalCount: analysis.totalNFTs,
+          nfts: analysis.nfts,
+          topCollections: topCollections,
+          collections: analysis.collections
+        };
+
+        // Generate enhanced analysis
+        const mysticalInsights = await generateEnhancedAnalysis(
+          nftDataFormat,
           caesarAnalysis, 
-          nftData, 
           analysisDepth as "quick" | "standard" | "deep"
         );
 
         walletAnalyses.push({
           address,
-          nftData: {
-            totalCount: nftData.totalCount,
-            topCollections: nftData.topCollections,
-            collections: nftData.collections,
-          },
+          analysis,
           caesarAnalysis,
           mysticalInsights
         });
@@ -90,7 +95,7 @@ export async function POST(request: NextRequest) {
         // Add placeholder analysis for failed wallet
         walletAnalyses.push({
           address,
-          nftData: { totalCount: 0, nfts: [], topCollections: [] },
+          analysis: { totalNFTs: 0, nfts: [], collections: new Map() },
           caesarAnalysis: { 
             culturalSignificance: "Analysis temporarily obscured by cosmic interference",
             confidence: 0.3
@@ -131,8 +136,8 @@ export async function POST(request: NextRequest) {
 
 async function generateWalletComparison(analyses: WalletAnalysisResult[], depth: string) {
   // Calculate comparative metrics
-  const totalNFTs = analyses.reduce((sum, analysis) => sum + analysis.nftData.totalCount, 0);
-  const allCollections = analyses.flatMap(analysis => analysis.nftData.topCollections || []);
+  const totalNFTs = analyses.reduce((sum, analysis) => sum + analysis.analysis.totalNFTs, 0);
+  const allCollections = analyses.flatMap(analysis => Array.from(analysis.analysis.collections.keys()) || []);
   const uniqueCollections = [...new Set(allCollections)];
   const sharedCollections = findSharedCollections(analyses);
   
@@ -165,14 +170,14 @@ function findSharedCollections(analyses: WalletAnalysisResult[]): string[] {
   const collectionCounts: Record<string, number> = {};
   
   analyses.forEach(analysis => {
-    const collections = analysis.nftData.topCollections || [];
+    const collections = Array.from(analysis.analysis.collections.keys()) || [];
     collections.forEach(collection => {
       collectionCounts[collection] = (collectionCounts[collection] || 0) + 1;
     });
   });
   
   return Object.entries(collectionCounts)
-    .filter(([_, count]) => count > 1)
+    .filter(([, count]) => count > 1)
     .map(([collection]) => collection);
 }
 
@@ -184,15 +189,17 @@ function generateCosmicConnections(analyses: WalletAnalysisResult[]) {
       const wallet1 = analyses[i];
       const wallet2 = analyses[j];
       
-      const sharedCollections = (wallet1.nftData.topCollections || [])
-        .filter((collection: string) => (wallet2.nftData.topCollections || []).includes(collection));
+      const wallet1Collections = Array.from(wallet1.analysis.collections.keys());
+      const wallet2Collections = Array.from(wallet2.analysis.collections.keys());
+      const sharedCollections = wallet1Collections
+        .filter((collection: string) => wallet2Collections.includes(collection));
       
       if (sharedCollections.length > 0) {
         connections.push({
           wallet1: wallet1.address.slice(0, 6) + "..." + wallet1.address.slice(-4),
           wallet2: wallet2.address.slice(0, 6) + "..." + wallet2.address.slice(-4),
           sharedCollections,
-          connectionStrength: sharedCollections.length / Math.max(wallet1.nftData.totalCount, wallet2.nftData.totalCount),
+          connectionStrength: sharedCollections.length / Math.max(wallet1.analysis.totalNFTs, wallet2.analysis.totalNFTs),
           cosmicResonance: generateCosmicResonance(sharedCollections.length)
         });
       }
@@ -211,14 +218,14 @@ function generateCosmicResonance(sharedCount: number): string {
 
 function analyzeDiversity(analyses: WalletAnalysisResult[]) {
   return analyses.map(analysis => {
-    const collections = analysis.nftData.topCollections || [];
-    const diversityScore = Math.min(100, (collections.length / analysis.nftData.totalCount) * 100);
+    const collections = Array.from(analysis.analysis.collections.keys());
+    const diversityScore = Math.min(100, (collections.length / analysis.analysis.totalNFTs) * 100);
     
     return {
       address: analysis.address.slice(0, 6) + "..." + analysis.address.slice(-4),
       diversityScore: Math.round(diversityScore),
       collectionCount: collections.length,
-      totalNFTs: analysis.nftData.totalCount,
+      totalNFTs: analysis.analysis.totalNFTs,
       diversityLevel: diversityScore > 80 ? "Cosmic Explorer" :
                      diversityScore > 60 ? "Balanced Seeker" :
                      diversityScore > 40 ? "Focused Collector" : "Specialist"
@@ -250,11 +257,11 @@ function generateChakraAlignment() {
   }));
 }
 
-function generateComparativeInsights(analyses: WalletAnalysisResult[], depth: string) {
+function generateComparativeInsights(analyses: WalletAnalysisResult[]) {
   const insights = [];
   
   // Portfolio size comparison
-  const sizes = analyses.map(a => a.nftData.totalCount);
+  const sizes = analyses.map(a => a.analysis.totalNFTs);
   const maxSize = Math.max(...sizes);
   const minSize = Math.min(...sizes);
   

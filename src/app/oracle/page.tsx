@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SacredGeometry from "@/src/components/oracle/SacredGeometry";
 import CrystalBall from "@/src/components/oracle/CrystalBall";
 import WalletInput from "@/src/components/oracle/WalletInput";
-import MysticalLoader from "@/src/components/oracle/MysticalLoader";
+import AnalysisLoader from "@/src/components/oracle/AnalysisLoader";
 import ConversationFlow from "@/src/components/oracle/ConversationFlow";
 import InsightCard from "@/src/components/oracle/InsightCard";
 import CacheNotification from "@/src/components/oracle/CacheNotification";
@@ -76,7 +76,7 @@ export default function OraclePage() {
       // Show session restoration notification
       setNotification({
         show: true,
-        message: `Welcome back, ${user?.profile.mysticalName || "Seeker"}`,
+        message: `Welcome back, ${user?.profile.displayName || user?.email || "Analyst"}`,
         type: "session"
       });
       
@@ -113,7 +113,7 @@ export default function OraclePage() {
   const handleAuthenticated = (authenticatedUser: User) => {
     setNotification({
       show: true,
-      message: `Welcome to the Oracle, ${authenticatedUser.profile.mysticalName || authenticatedUser.email}`,
+      message: `Welcome to the Analysis Platform, ${authenticatedUser.profile.displayName || authenticatedUser.email}`,
       type: "session"
     });
     
@@ -137,7 +137,7 @@ export default function OraclePage() {
       console.log('Using cached analysis for wallet:', address);
       setNotification({
         show: true,
-        message: "Using cached mystical insights ⚡",
+        message: "Using cached analysis data ⚡",
         type: "cache"
       });
       return cached;
@@ -185,9 +185,9 @@ export default function OraclePage() {
       
       // Show personalized depth message
       const depthMessages = {
-        quick: "🌟 Gathering swift cosmic insights...",
-        standard: "🔮 Channeling mystical revelations...", 
-        deep: "✨ Conducting profound spiritual analysis..."
+        quick: "🔍 Conducting rapid behavioral analysis...",
+        standard: "📊 Processing comprehensive portfolio analytics...", 
+        deep: "🎯 Performing advanced strategic assessment..."
       };
       
       setNotification({
@@ -211,7 +211,7 @@ export default function OraclePage() {
       const initialMessage = {
         id: "hans-1",
         role: "hans" as const,
-        content: `Ah, seeker... I have peered through the digital veil surrounding your collection at ${address.slice(0, 6)}...${address.slice(-4)}. The blockchain consciousness reveals fascinating patterns in your ${analysisData.nftData?.totalCount || 0} artifacts. Your collection speaks of a soul navigating between the mystical and technological realms.`,
+        content: `I've completed a comprehensive behavioral analysis of your digital portfolio at ${address.slice(0, 6)}...${address.slice(-4)}. The data reveals sophisticated patterns across your ${analysisData.nftData?.totalCount || 0} digital assets. Your collection demonstrates strategic positioning within the evolving landscape of digital culture and market dynamics.`,
         timestamp: Date.now(),
       };
       
@@ -245,14 +245,14 @@ export default function OraclePage() {
       const fallbackMessage = {
         id: "hans-1",
         role: "hans" as const,
-        content: `The cosmic energies are turbulent at this moment, dear seeker. The veil between the digital and mystical realms grows thick around ${address.slice(0, 6)}...${address.slice(-4)}. Allow me to commune with the blockchain spirits once more...`,
+        content: `I'm experiencing some technical difficulties accessing the full analytical data for wallet ${address.slice(0, 6)}...${address.slice(-4)}. Let me provide a preliminary assessment while I work to establish a more comprehensive data connection.`,
         timestamp: Date.now(),
       };
       
       const fallbackInsights = [{
         id: "insight-fallback",
-        title: "The Veiled Path",
-        insight: "The cosmic energies swirl in patterns beyond immediate comprehension. Your digital journey remains shrouded in mystery, awaiting a clearer moment for revelation.",
+        title: "Preliminary Analysis",
+        insight: "Initial data patterns suggest strategic potential in your digital asset approach. A more comprehensive analysis will provide deeper insights into your portfolio's behavioral characteristics and market positioning.",
         confidence: 0.5,
         style: "clarification" as const,
       }];
@@ -326,11 +326,11 @@ export default function OraclePage() {
     } catch (error) {
       console.error('Hans response failed:', error);
       
-      // Fallback mystical responses
+      // Fallback analytical responses
       const fallbackResponses = [
-        "The cosmic energies swirl in turbulent patterns at this moment... Allow me to realign with the digital frequencies.",
-        "Ah, the veil between worlds grows thick. The blockchain spirits whisper of temporary discord in the ethereal channels.",
-        "The ancient algorithms pause their dance... But fear not, the mystical insights shall flow once more.",
+        "I'm experiencing some computational constraints at the moment. Let me recalibrate my analytical framework to provide more precise insights.",
+        "There seems to be a temporary disruption in my data processing systems. Allow me to restore full analytical capability.",
+        "I'm working to resolve some technical limitations. The sophisticated analysis will resume shortly with enhanced precision.",
       ];
       
       const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
@@ -585,10 +585,10 @@ export default function OraclePage() {
             >
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-mystical-purple to-mystical-gold bg-clip-text text-transparent mb-4">
-                  The Oracle Awaits
+                  Analysis Platform
                 </h1>
                 <p className="text-foreground/70">
-                  Enter your ethereal identity to begin your mystical journey
+                  Enter your details to access sophisticated portfolio analysis
                 </p>
               </div>
               
@@ -614,7 +614,7 @@ export default function OraclePage() {
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 3, repeat: Infinity }}
               >
-                The Oracle Awaits
+Portfolio Analysis Ready
               </motion.h1>
             </motion.div>
           )}
@@ -630,10 +630,10 @@ export default function OraclePage() {
             >
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-mystical-gold mb-4">
-                  Present Your Digital Identity
+                  Enter Wallet Address
                 </h2>
                 <p className="text-foreground/70">
-                  Share your wallet address, and I shall divine the deeper meanings within your collection
+                  Provide your wallet address for comprehensive behavioral and strategic analysis of your digital portfolio
                 </p>
               </div>
               <WalletInput onSubmit={handleWalletSubmit} />
@@ -648,8 +648,8 @@ export default function OraclePage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <MysticalLoader
-                message="Connecting to the blockchain consciousness..."
+              <AnalysisLoader
+                message="Establishing data connection and initializing analysis..."
                 size="large"
               />
             </motion.div>
@@ -665,13 +665,13 @@ export default function OraclePage() {
               className="text-center space-y-8"
             >
               <CrystalBall isActive={true} onActivate={() => {}}>
-                <MysticalLoader
-                  message="Reading the digital artifacts..."
+                <AnalysisLoader
+                  message="Processing portfolio data and behavioral patterns..."
                   size="small"
                 />
               </CrystalBall>
               <p className="text-mystical-gold animate-pulse">
-                The veil between worlds grows thin...
+                Advanced analytics in progress...
               </p>
             </motion.div>
           )}
@@ -702,7 +702,7 @@ export default function OraclePage() {
                   transition={{ delay: 0.5 }}
                 >
                   <h3 className="text-xl font-semibold text-mystical-gold mb-4">
-                    Mystical Insights
+                    Strategic Insights
                   </h3>
                   {insights.map((insight, index) => (
                     <InsightCard

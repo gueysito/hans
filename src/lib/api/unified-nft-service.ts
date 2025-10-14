@@ -1,6 +1,7 @@
 // Unified NFT Service - Combines multiple API sources for comprehensive analysis
 import { openSeaAPI } from './opensea-v2';
 import { alchemyAPI } from './alchemy';
+import { moralisAPI } from './moralis';
 import { coinGeckoAPI } from './coingecko';
 import { CacheManager } from '../performance';
 
@@ -48,6 +49,7 @@ export interface UnifiedNFTCollection {
   sources: {
     opensea: boolean;
     alchemy: boolean;
+    moralis: boolean;
     coingecko: boolean;
   };
 }
@@ -154,13 +156,17 @@ class UnifiedNFTService {
     
     try {
       // Fetch data from multiple sources in parallel
-      const [openSeaData, alchemyData, ethPrice, globalData] = await Promise.all([
+      const [openSeaData, alchemyData, moralisData, ethPrice, globalData] = await Promise.all([
         openSeaAPI.getWalletNFTs(walletAddress).catch(err => {
           console.error('OpenSea fetch failed:', err);
           return null;
         }),
         alchemyAPI.getNFTsForOwner(walletAddress).catch(err => {
           console.error('Alchemy fetch failed:', err);
+          return null;
+        }),
+        moralisAPI.getWalletNFTs(walletAddress).catch(err => {
+          console.error('Moralis fetch failed:', err);
           return null;
         }),
         this.getETHPrice(),
@@ -181,7 +187,7 @@ class UnifiedNFTService {
             collectionMap.set(nft.collection, await this.unifyCollection(collection, null));
           }
           
-          nftMap.set(key, await this.unifyNFT(nft, null, ethPrice));
+          nftMap.set(key, await this.unifyNFT(nft, null, null, ethPrice));
         }
       }
 
@@ -196,7 +202,7 @@ class UnifiedNFTService {
             existing.rarityScore = nft.raw?.metadata?.rarity?.score || existing.rarityScore;
             existing.rarityRank = nft.raw?.metadata?.rarity?.rank || existing.rarityRank;
           } else {
-            nftMap.set(key, await this.unifyNFT(null, nft, ethPrice));
+            nftMap.set(key, await this.unifyNFT(null, nft, null, ethPrice));
           }
           
           // Get collection data if not already present
@@ -225,9 +231,77 @@ class UnifiedNFTService {
                 sources: {
                   opensea: false,
                   alchemy: true,
+                  moralis: false,
                   coingecko: false,
                 },
               });
+            }
+          }
+        }
+      }
+
+      // Process Moralis data (merge with existing)
+      if (moralisData && moralisData.result) {
+        console.log(`🔗 Processing ${moralisData.result.length} NFTs from Moralis`);
+        
+        for (const nft of moralisData.result) {
+          const key = `${nft.token_address}_${nft.token_id}`;
+          const existing = nftMap.get(key);
+          
+          if (existing) {
+            // Merge additional data from Moralis
+            if (nft.metadata && !existing.description) {
+              existing.description = nft.metadata.description || existing.description;
+            }
+            if (nft.metadata?.attributes && (!existing.traits || existing.traits.length === 0)) {
+              existing.traits = nft.metadata.attributes.map(attr => ({
+                traitType: attr.trait_type,
+                value: attr.value,
+                rarity: undefined
+              }));
+            }
+            // Add verification status
+            existing.estimatedValue = existing.estimatedValue || 0;
+          } else {
+            // Create new NFT entry from Moralis data
+            const unifiedNFT = await this.unifyNFT(null, null, nft, ethPrice);
+            nftMap.set(key, unifiedNFT);
+          }
+          
+          // Try to get additional collection stats from Moralis if not present
+          if (!collectionMap.has(nft.name)) {
+            try {
+              const collectionStats = await moralisAPI.getCollectionStats(nft.token_address);
+              if (collectionStats) {
+                collectionMap.set(nft.name, {
+                  slug: nft.name.toLowerCase().replace(/\s+/g, '-'),
+                  name: nft.name,
+                  description: '',
+                  imageUrl: nft.metadata?.image || '',
+                  floorPrice: parseFloat(collectionStats.floor_price_native || '0'),
+                  floorPriceUSD: parseFloat(collectionStats.floor_price_usd || '0'),
+                  totalVolume: parseFloat(collectionStats.volume_native?.['24hr'] || '0'),
+                  totalSales: 0,
+                  totalSupply: parseInt(collectionStats.total_tokens || '0'),
+                  numOwners: parseInt(collectionStats.total_owners || '0'),
+                  averagePrice: parseFloat(collectionStats.average_sale_price_native || '0'),
+                  marketCap: parseFloat(collectionStats.market_cap_native || '0'),
+                  oneDayChange: parseFloat(collectionStats.floor_price_24hr_percent_change || '0'),
+                  sevenDayChange: 0,
+                  thirtyDayChange: 0,
+                  oneDayVolume: parseFloat(collectionStats.volume_native?.['24hr'] || '0'),
+                  sevenDayVolume: parseFloat(collectionStats.volume_native?.['7d'] || '0'),
+                  thirtyDayVolume: parseFloat(collectionStats.volume_native?.['30d'] || '0'),
+                  sources: {
+                    opensea: false,
+                    alchemy: false,
+                    moralis: true,
+                    coingecko: false,
+                  },
+                });
+              }
+            } catch (error) {
+              console.error(`Failed to get Moralis collection stats for ${nft.token_address}:`, error);
             }
           }
         }
@@ -364,6 +438,7 @@ class UnifiedNFTService {
       sources: {
         opensea: !!openSeaCollection,
         alchemy: !!alchemyData,
+        moralis: false,
         coingecko: false,
       },
     };
@@ -372,19 +447,20 @@ class UnifiedNFTService {
   private async unifyNFT(
     openSeaNFT: any | null,
     alchemyNFT: any | null,
+    moralisNFT: any | null,
     ethPrice: number
   ): Promise<UnifiedNFT> {
-    const nft = openSeaNFT || alchemyNFT;
+    const nft = openSeaNFT || alchemyNFT || moralisNFT;
     
     return {
-      contractAddress: openSeaNFT?.contract_address || alchemyNFT?.contract?.address || '',
-      tokenId: openSeaNFT?.token_id || alchemyNFT?.tokenId || '',
-      name: openSeaNFT?.name || alchemyNFT?.name || '',
-      description: openSeaNFT?.description || alchemyNFT?.description || '',
-      imageUrl: openSeaNFT?.image_url || alchemyNFT?.image?.cachedUrl || '',
-      collectionSlug: openSeaNFT?.collection || alchemyNFT?.collection?.slug || '',
-      collectionName: openSeaNFT?.collection || alchemyNFT?.collection?.name || '',
-      traits: (openSeaNFT?.traits || alchemyNFT?.raw?.metadata?.attributes || []).map((t: any) => ({
+      contractAddress: openSeaNFT?.contract_address || alchemyNFT?.contract?.address || moralisNFT?.token_address || '',
+      tokenId: openSeaNFT?.token_id || alchemyNFT?.tokenId || moralisNFT?.token_id || '',
+      name: openSeaNFT?.name || alchemyNFT?.name || moralisNFT?.name || moralisNFT?.metadata?.name || '',
+      description: openSeaNFT?.description || alchemyNFT?.description || moralisNFT?.metadata?.description || '',
+      imageUrl: openSeaNFT?.image_url || alchemyNFT?.image?.cachedUrl || moralisNFT?.metadata?.image || '',
+      collectionSlug: openSeaNFT?.collection || alchemyNFT?.collection?.slug || moralisNFT?.name?.toLowerCase().replace(/\s+/g, '-') || '',
+      collectionName: openSeaNFT?.collection || alchemyNFT?.collection?.name || moralisNFT?.name || '',
+      traits: (openSeaNFT?.traits || alchemyNFT?.raw?.metadata?.attributes || moralisNFT?.metadata?.attributes || []).map((t: any) => ({
         traitType: t.trait_type || t.trait,
         value: t.value,
         rarity: t.trait_count ? (1 / t.trait_count) * 100 : undefined,
@@ -394,7 +470,7 @@ class UnifiedNFTService {
       lastSalePrice: openSeaNFT?.last_sale?.total_price ? parseFloat(openSeaNFT.last_sale.total_price) : undefined,
       lastSalePriceUSD: openSeaNFT?.last_sale?.total_price ? parseFloat(openSeaNFT.last_sale.total_price) * ethPrice : undefined,
       lastSaleDate: openSeaNFT?.last_sale?.transaction?.timestamp,
-      owner: alchemyNFT?.owners?.[0]?.ownerAddress || '',
+      owner: alchemyNFT?.owners?.[0]?.ownerAddress || moralisNFT?.owner_of || '',
       acquiredDate: alchemyNFT?.acquiredAt?.blockTimestamp,
       estimatedValue: 0, // Would calculate based on collection floor
       estimatedValueUSD: 0,

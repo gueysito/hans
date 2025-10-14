@@ -160,34 +160,6 @@ class PerformanceMonitor {
   }
 }
 
-// React hook for performance monitoring
-export function usePerformanceMonitor() {
-  const monitor = PerformanceMonitor.getInstance();
-  
-  return {
-    trackApiCall: monitor.trackApiCall.bind(monitor),
-    getReport: monitor.getPerformanceReport.bind(monitor),
-  };
-}
-
-// Utility for measuring component render time
-export function withPerformanceTracking<P extends {}>(
-  Component: React.ComponentType<P>,
-  componentName: string
-) {
-  return function PerformanceTrackedComponent(props: P) {
-    React.useEffect(() => {
-      const startTime = performance.now();
-      
-      return () => {
-        const endTime = performance.now();
-        console.log(`🎨 ${componentName} render time: ${(endTime - startTime).toFixed(2)}ms`);
-      };
-    });
-
-    return React.createElement(Component, props);
-  };
-}
 
 // Cache management utilities
 export class CacheManager {
@@ -313,5 +285,3 @@ export function throttle<T extends (...args: any[]) => any>(
 // Export singleton instance
 export const performanceMonitor = PerformanceMonitor.getInstance();
 
-// React import for TypeScript
-import React from 'react';
