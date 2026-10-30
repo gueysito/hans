@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+.env*
+.agents
+.claude
+.cursor
+.bmad-core
+*.tsbuildinfo
+npm-debug.log*

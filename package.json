@@ -2,6 +2,11 @@
   "name": "hans",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=22.23.4 <23",
+    "npm": ">=11.12.1 <12"
+  },
   "scripts": {
     "dev": "next dev",
     "dev:full": "npm-run-all --parallel dev:frontend dev:backend",
@@ -16,12 +21,12 @@
     "clsx": "^2.1.1",
     "convex": "^1.27.0",
     "framer-motion": "^12.23.12",
-    "next": "15.2.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "15.5.28",
+    "react": "19.1.4",
+    "react-dom": "19.1.4",
     "react-hook-form": "^7.62.0",
     "tailwind-merge": "^3.3.1",
-    "zod": "^4.1.8"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,10 +35,15 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.2.3",
+    "eslint-config-next": "15.5.28",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.31"
+    }
   }
 }
