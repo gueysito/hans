@@ -1,8 +1,24 @@
 # 🔮 Hans NFT Oracle
 
+## Security maintenance, 2026-10-30
+
+Hans is currently offline. This maintenance update repairs the dependency/runtime security baseline; it does not deploy the app or certify it for public use.
+
+Use Node **22.23.4** (`nvm use`) and npm **11.12.1**. Install with `npm ci`; `.npmrc` blocks dependency lifecycle scripts, enforces the runtime requirements and applies a seven-day release-age gate. Docker uses the same Node release and npm for its frozen dependency install.
+
+Next.js stays on version 15 with React 19 and Convex. The scoped `next → postcss` override keeps its pinned CSS parser on a patched 8.x release; revisit the override when a compatible Next release includes a patched parser itself.
+
+| Maintenance item | Status | Verification / next action |
+| --- | --- | --- |
+| Patched Node, Next/React, Zod and affected transitive dependencies | Verified for this offline maintenance scope | Frozen install and installed dependency tree pass; audit reports zero vulnerabilities. Seventeen focused checks pass on macOS and Linux; local-container HTTP and server-rendering smoke checks pass. |
+| Existing build restoration | Deferred by owner | Original baseline: 140 lint errors, 84 type errors, production build fails. Missing Convex generated files and other source issues require a separate repair. Keep existing checks enabled. |
+| Public-release security review | Deferred until public-use work resumes | Review authentication, Convex ownership checks, paid-API rate limits and error exposure before deployment. Standards adoption remains deferred. |
+
+The production image depends on a successful application build. Its deployment remains blocked by the existing source failures; a successful dependency-image check does not mean the full production image builds.
+
 > *A mystical AI-powered NFT collection analysis platform that reveals the hidden meanings and cosmic connections within your digital treasures.*
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.28-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![Convex](https://img.shields.io/badge/Convex-Backend-orange?style=flat-square)](https://convex.dev/)
@@ -41,9 +57,14 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+- Node.js 22.23.4
+- npm 11.12.1
 - Git
+
+After selecting Node, install the pinned npm version if needed:
+```bash
+npm install --global npm@11.12.1 --ignore-scripts
+```
 
 ### Installation
 
@@ -55,7 +76,7 @@
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Set up environment variables**
@@ -223,7 +244,7 @@ Hans Oracle is optimized for production with:
 - **Security Headers**: Comprehensive CSP, XSS protection, and CSRF prevention
 - **Authentication**: Optional Clerk integration for user management
 - **API Protection**: Rate limiting and request validation
-- **Production Ready**: Security audit passed, no secrets in codebase
+- **Public release**: Deferred; the security maintenance section above records verification limits and required follow-up.
 
 ## 🤝 Contributing
 
